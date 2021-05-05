@@ -11,12 +11,13 @@ from ipython_genutils.py3compat import (bytes_to_str, str_to_bytes)
 from jupyter_core.paths import jupyter_data_dir
 from traitlets import Bool, Unicode, default
 from traitlets.config.configurable import LoggingConfigurable
+from typing import Dict, Optional, Union
 
 kernels_lock = threading.Lock()
 
 # These will be located under the `persistence_root` and exist
 # to make integration with ContentsManager implementations easier.
-KERNEL_SESSIONS_DIR_NAME = "kernel_sessions"
+KERNEL_SESSIONS_DIR_NAME: str = "kernel_sessions"
 
 
 class KernelSessionManager(LoggingConfigurable):
@@ -38,34 +39,34 @@ class KernelSessionManager(LoggingConfigurable):
     """
 
     # Session Persistence
-    session_persistence_env = 'EG_KERNEL_SESSION_PERSISTENCE'
-    session_persistence_default_value = False
-    enable_persistence = Bool(session_persistence_default_value, config=True,
+    session_persistence_env: str = 'EG_KERNEL_SESSION_PERSISTENCE'
+    session_persistence_default_value: bool = False
+    enable_persistence: bool = Bool(session_persistence_default_value, config=True,
                               help="""Enable kernel session persistence (True or False). Default = False
                               (EG_KERNEL_SESSION_PERSISTENCE env var)""")
 
     @default('enable_persistence')
-    def session_persistence_default(self):
+    def session_persistence_default(self) -> bool:
         return bool(os.getenv(self.session_persistence_env,
                               str(self.session_persistence_default_value)).lower() == 'true')
 
     # Persistence root
-    persistence_root_env = 'EG_PERSISTENCE_ROOT'
-    persistence_root = Unicode(config=True,
+    persistence_root_env: str = 'EG_PERSISTENCE_ROOT'
+    persistence_root: str = Unicode(config=True,
                                help="""Identifies the root 'directory' under which the 'kernel_sessions' node will
                                reside.  This directory should exist.  (EG_PERSISTENCE_ROOT env var)""")
 
     @default('persistence_root')
-    def persistence_root_default(self):
+    def persistence_root_default(self) -> str:
         return os.getenv(self.persistence_root_env, "/")
 
-    def __init__(self, kernel_manager, **kwargs):
+    def __init__(self, kernel_manager: SeedingMappingKernelManager, **kwargs) -> None:
         super(KernelSessionManager, self).__init__(**kwargs)
-        self.kernel_manager = kernel_manager
+        self.kernel_manager: SeedingMappingKernelManager = kernel_manager
         self._sessions = dict()
         self._sessionsByUser = dict()
 
-    def create_session(self, kernel_id, **kwargs):
+    def create_session(self, kernel_id: str, **kwargs) -> None:
         """
         Creates a session associated with this kernel.
 
@@ -94,7 +95,7 @@ class KernelSessionManager(LoggingConfigurable):
         kernel_session['process_info'] = km.process_proxy.get_process_info() if km.process_proxy else {}
         self._save_session(kernel_id, kernel_session)
 
-    def refresh_session(self, kernel_id):
+    def refresh_session(self, kernel_id: str) -> None:
         """
         Refreshes the session from its persisted state. Called on kernel restarts.
         """
@@ -109,7 +110,7 @@ class KernelSessionManager(LoggingConfigurable):
         kernel_session['process_info'] = km.process_proxy.get_process_info() if km.process_proxy else {}
         self._save_session(kernel_id, kernel_session)
 
-    def _save_session(self, kernel_id, kernel_session):
+    def _save_session(self, kernel_id: str, kernel_session: str) -> None:
         # Write/commit the addition, update dictionary
         kernels_lock.acquire()
         try:
@@ -126,12 +127,12 @@ class KernelSessionManager(LoggingConfigurable):
         finally:
             kernels_lock.release()
 
-    def start_session(self, kernel_id):
+    def start_session(self, kernel_id: str) -> bool:
         kernel_session = self._sessions.get(kernel_id, None)
         if kernel_session is not None:
             return self._start_session(kernel_session)
 
-    def start_sessions(self):
+    def start_sessions(self) -> None:
         """
         Attempt to start persisted sessions.
 
@@ -153,7 +154,7 @@ class KernelSessionManager(LoggingConfigurable):
 
             self._delete_sessions(sessions_to_remove)
 
-    def _start_session(self, kernel_session):
+    def _start_session(self, kernel_session: Dict[str, object]) -> bool:
         # Attempt to start kernel from persisted state.  if started, record kernel_session in dictionary
         # else delete session
         kernel_id = kernel_session['kernel_id']
@@ -168,7 +169,7 @@ class KernelSessionManager(LoggingConfigurable):
 
         return True
 
-    def delete_session(self, kernel_id):
+    def delete_session(self, kernel_id: str) -> None:
         """
         Removes saved session associated with kernel_id from dictionary and persisted storage.
         """
@@ -177,7 +178,7 @@ class KernelSessionManager(LoggingConfigurable):
         if self.enable_persistence:
             self.log.info("Deleted persisted kernel session for id: %s" % kernel_id)
 
-    def _delete_sessions(self, kernel_ids):
+    def _delete_sessions(self, kernel_ids: List[str]) -> None:
         # Remove unstarted sessions and rewrite
         kernels_lock.acquire()
         try:
@@ -195,7 +196,7 @@ class KernelSessionManager(LoggingConfigurable):
             kernels_lock.release()
 
     @staticmethod
-    def pre_save_transformation(session):
+    def pre_save_transformation(session: Dict[str, object]) -> Dict[str, object]:
         kernel_id = list(session.keys())[0]
         session_info = session[kernel_id]
         if session_info.get('connection_info'):
@@ -207,7 +208,7 @@ class KernelSessionManager(LoggingConfigurable):
         return session
 
     @staticmethod
-    def post_load_transformation(session):
+    def post_load_transformation(session: Dict[str, object]) -> Dict[str, object]:
         kernel_id = list(session.keys())[0]
         session_info = session[kernel_id]
         if session_info.get('connection_info'):
@@ -219,14 +220,14 @@ class KernelSessionManager(LoggingConfigurable):
         return session
 
     # abstractmethod
-    def load_sessions(self):
+    def load_sessions(self) -> None:
         """
         Load and initialize _sessions member from persistent storage.  This method is called from start_sessions().
         """
         raise NotImplementedError("KernelSessionManager.load_sessions() requires an implementation!")
 
     # abstractmethod
-    def load_session(self, kernel_id):
+    def load_session(self, kernel_id: str) -> None:
         """
         Load and initialize _sessions member from persistent storage for a single kernel.  This method is called from
         refresh_sessions().
@@ -234,19 +235,19 @@ class KernelSessionManager(LoggingConfigurable):
         raise NotImplementedError("KernelSessionManager.load_sessions() requires an implementation!")
 
     # abstractmethod
-    def delete_sessions(self, kernel_ids):
+    def delete_sessions(self, kernel_ids: List[str]) -> None:
         """
         Delete the sessions in persistent storage.  Caller is responsible for synchronizing call.
         """
         raise NotImplementedError("KernelSessionManager.delete_sessions(kernel_ids) requires an implementation!")
 
-    def save_session(self, kernel_id):
+    def save_session(self, kernel_id: str) -> None:
         """
         Saves the sessions dictionary to persistent store.  Caller is responsible for synchronizing call.
         """
         raise NotImplementedError("KernelSessionManager.save_session(kernel_id) requires an implementation!")
 
-    def active_sessions(self, username):
+    def active_sessions(self, username: str) -> int:
         """
         Returns the number of active sessions for the given username.
 
@@ -264,7 +265,7 @@ class KernelSessionManager(LoggingConfigurable):
         return 0
 
     @staticmethod
-    def get_kernel_username(**kwargs):
+    def get_kernel_username(**kwargs) -> str:
         """
         Returns the kernel's logical username from env dict.
 
@@ -299,7 +300,7 @@ class FileKernelSessionManager(KernelSessionManager):
 
     # Change the default to Jupyter Data Dir.
     @default('persistence_root')
-    def persistence_root_default(self):
+    def persistence_root_default(self) -> str:
         return os.getenv(self.persistence_root_env, jupyter_data_dir())
 
     def __init__(self, kernel_manager, **kwargs):

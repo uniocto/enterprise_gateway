@@ -6,7 +6,7 @@ import tornado
 import jupyter_server.services.sessions.handlers as jupyter_server_handlers
 from jupyter_server.utils import ensure_async
 from ...mixins import TokenAuthorizationMixin, CORSMixin, JSONErrorsMixin
-
+from typing import List
 
 class SessionRootHandler(TokenAuthorizationMixin,
                          CORSMixin,
@@ -15,7 +15,7 @@ class SessionRootHandler(TokenAuthorizationMixin,
     """Extends the jupyter_server root session handler with token auth, CORS, and
     JSON errors.
     """
-    async def get(self):
+    async def get(self) -> None:
         """Overrides the super class method to honor the kernel listing
         configuration setting.
 
@@ -30,7 +30,7 @@ class SessionRootHandler(TokenAuthorizationMixin,
             await ensure_async(super(SessionRootHandler, self).get())
 
 
-default_handlers = []
+default_handlers: List[tuple] = []
 for path, cls in jupyter_server_handlers.default_handlers:
     if cls.__name__ in globals():
         # Use the same named class from here if it exists
