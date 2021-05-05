@@ -8,6 +8,7 @@ from jupyter_server.utils import ensure_async
 from ...mixins import TokenAuthorizationMixin, CORSMixin, JSONErrorsMixin
 from typing import List
 
+
 class SessionRootHandler(TokenAuthorizationMixin,
                          CORSMixin,
                          JSONErrorsMixin,

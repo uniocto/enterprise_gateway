@@ -11,7 +11,8 @@ from ipython_genutils.py3compat import (bytes_to_str, str_to_bytes)
 from jupyter_core.paths import jupyter_data_dir
 from traitlets import Bool, Unicode, default
 from traitlets.config.configurable import LoggingConfigurable
-from typing import Dict, Optional, Union
+from kernel_gateway.services.kernels.manager import SeedingMappingKernelManager
+from typing import Dict, List
 
 kernels_lock = threading.Lock()
 
@@ -41,9 +42,10 @@ class KernelSessionManager(LoggingConfigurable):
     # Session Persistence
     session_persistence_env: str = 'EG_KERNEL_SESSION_PERSISTENCE'
     session_persistence_default_value: bool = False
-    enable_persistence: bool = Bool(session_persistence_default_value, config=True,
-                              help="""Enable kernel session persistence (True or False). Default = False
-                              (EG_KERNEL_SESSION_PERSISTENCE env var)""")
+    enable_persistence: bool = Bool(session_persistence_default_value,
+                                    config=True,
+                                    help="""Enable kernel session persistence (True or False). Default = False
+                                    (EG_KERNEL_SESSION_PERSISTENCE env var)""")
 
     @default('enable_persistence')
     def session_persistence_default(self) -> bool:
@@ -53,8 +55,8 @@ class KernelSessionManager(LoggingConfigurable):
     # Persistence root
     persistence_root_env: str = 'EG_PERSISTENCE_ROOT'
     persistence_root: str = Unicode(config=True,
-                               help="""Identifies the root 'directory' under which the 'kernel_sessions' node will
-                               reside.  This directory should exist.  (EG_PERSISTENCE_ROOT env var)""")
+                                    help="""Identifies the root 'directory' under which the 'kernel_sessions' node will
+                                    reside.  This directory should exist.  (EG_PERSISTENCE_ROOT env var)""")
 
     @default('persistence_root')
     def persistence_root_default(self) -> str:

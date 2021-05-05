@@ -6,7 +6,8 @@ import uuid
 from tornado import web
 from traitlets.config.configurable import LoggingConfigurable
 from ipython_genutils.py3compat import unicode_type
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, List, Union
+from kernel_gateway.services.kernels.manager import SeedingMappingKernelManager
 
 class SessionManager(LoggingConfigurable):
     """Simple implementation of the SessionManager interface that allows clients
@@ -26,7 +27,7 @@ class SessionManager(LoggingConfigurable):
     _columns : list
         Session metadata key names
     """
-    def __init__(self, kernel_manager: SeedingMappingKernelManager, *args, **kwargs)-> None:
+    def __init__(self, kernel_manager: SeedingMappingKernelManager, *args, **kwargs) -> None:
         super(SessionManager, self).__init__(*args, **kwargs)
         self.kernel_manager = kernel_manager
         self._sessions = []
@@ -46,11 +47,16 @@ class SessionManager(LoggingConfigurable):
         """
         return bool([item for item in self._sessions if item['path'] == path])
 
-    def new_session_id(self):
+    def new_session_id(self) -> str:
         """Creates a uuid for a new session."""
         return unicode_type(uuid.uuid4())
 
-    async def create_session(self, path: str=None, kernel_name: str=None, kernel_id: str=None, *args, **kwargs) -> Dict[str, Union[str, object]]:
+    async def create_session(self,
+                             path: str = None,
+                             kernel_name: str = None,
+                             kernel_id: str = None,
+                             *args,
+                             **kwargs) -> Dict[str, Union[str, object]]:
         """Creates a session and returns its model.
 
         Launches a kernel and stores the session metadata for later lookup.
@@ -71,10 +77,15 @@ class SessionManager(LoggingConfigurable):
         """
         session_id = self.new_session_id()
         # allow nbm to specify kernels cwd
-        kernel_id = await self.kernel_manager.start_kernel(path=path, kernel_name=kernel_name)
-        return self.save_session(session_id, path=path, kernel_id=kernel_id)
+        kernel_id = await self.kernel_manager.start_kernel(path = path, kernel_name = kernel_name)
+        return self.save_session(session_id, path = path, kernel_id = kernel_id)
 
-    def save_session(self, session_id: str, path: str=None, kernel_id: str=None, *args, **kwargs) -> Dict[str, Union[str, object]]:
+    def save_session(self,
+                     session_id: str,
+                     path: str = None,
+                     kernel_id: str = None,
+                     *args,
+                     **kwargs) -> Dict[str, Union[str, object]]:
         """Saves the metadata for the session with the given `session_id`.
 
         Given a `session_id` (and any other of the arguments), this method
