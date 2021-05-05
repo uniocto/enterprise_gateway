@@ -9,6 +9,7 @@ from ipython_genutils.py3compat import unicode_type
 from typing import Dict, Optional, List, Union
 from kernel_gateway.services.kernels.manager import SeedingMappingKernelManager
 
+
 class SessionManager(LoggingConfigurable):
     """Simple implementation of the SessionManager interface that allows clients
     to associate basic metadata with a kernel.
@@ -77,8 +78,8 @@ class SessionManager(LoggingConfigurable):
         """
         session_id = self.new_session_id()
         # allow nbm to specify kernels cwd
-        kernel_id = await self.kernel_manager.start_kernel(path = path, kernel_name = kernel_name)
-        return self.save_session(session_id, path = path, kernel_id = kernel_id)
+        kernel_id = await self.kernel_manager.start_kernel(path=path, kernel_name=kernel_name)
+        return self.save_session(session_id, path=path, kernel_id=kernel_id)
 
     def save_session(self,
                      session_id: str,
